@@ -51,7 +51,7 @@ public class TableService {
         );
     }
 
-    public PaginatedResponseDto fetchRows( String tableName, int page, int size, String search, String sortBy, String sortDir, Map<String, String> allParams ) {
+    public PaginatedResponseDto fetchRows( String tableName, int page, int size, String search, String sortBy, String sortDir, List<String> filterColumns, List<String> filterValues, List<String> filterConjunctions, Map<String, String> allParams ) {
 
         validateSqlIdentifier(tableName);
         validateSqlIdentifier(sortBy);
@@ -72,13 +72,15 @@ public class TableService {
 
         for (Map.Entry<String, String> entry : allParams.entrySet()) {
             String key = entry.getKey();
-            if ( List.of( "page", "size", "search", "sortBy", "sortDir" ).contains(key) ) continue;
+            if ( List.of( "page", "size", "search", "sortBy", "sortDir", "filterColumn", "filterValue", "filterConjunction" ).contains(key) ) continue;
 
             validateSqlIdentifier(key);
             sql.append("AND ").append(key).append(" = ? ");
             countSql.append("AND ").append(key).append(" = ? ");
             params.add(entry.getValue());
         }
+
+        appendBuilderFilters(sql, countSql, params, filterColumns, filterValues, filterConjunctions);
 
         sql.append("ORDER BY ").append(sortBy).append(" ");
 
@@ -102,9 +104,71 @@ public class TableService {
         return PaginatedResponseDto.builder().data(rows).totalRows(totalRows).page(page).size(size).totalPages(totalPages).build();
     }
 
+    private void appendBuilderFilters(
+            StringBuilder sql,
+            StringBuilder countSql,
+            List<Object> params,
+            List<String> filterColumns,
+            List<String> filterValues,
+            List<String> filterConjunctions
+    ) {
+        if ( filterColumns == null || filterValues == null || filterColumns.isEmpty() || filterValues.isEmpty() ) {
+            return;
+        }
+
+        int filterCount = Math.min(filterColumns.size(), filterValues.size());
+        String filterExpression = null;
+        List<Object> filterParams = new ArrayList<>();
+
+        for (int i = 0; i < filterCount; i++) {
+            String column = filterColumns.get(i);
+            String value = filterValues.get(i);
+
+            if ( value == null || value.isBlank() ) {
+                continue;
+            }
+
+            validateSqlIdentifier(column);
+
+            String clause = column + " = ?";
+            if ( filterExpression == null ) {
+                filterExpression = clause;
+            } else {
+                String conjunction = "AND";
+                if ( filterConjunctions != null && i < filterConjunctions.size() ) {
+                    conjunction = normalizeConjunction(filterConjunctions.get(i));
+                }
+
+                filterExpression = "(" + filterExpression + " " + conjunction + " " + clause + ")";
+            }
+
+            filterParams.add(value);
+        }
+
+        if ( filterExpression == null ) {
+            return;
+        }
+
+        String filterSql = "AND (" + filterExpression + ") ";
+        sql.append(filterSql);
+        countSql.append(filterSql);
+        params.addAll(filterParams);
+    }
+
+    private String normalizeConjunction(String conjunction) {
+        if ( "OR".equalsIgnoreCase(conjunction) ) {
+            return "OR";
+        }
+
+        return "AND";
+    }
+
     private void validateSqlIdentifier(String input) {
         if ( input == null || !input.matches("[a-zA-Z0-9_]+") ) {
                 throw new RuntimeException("Invalid SQL identifier");
         }
     }
 }
+
+
+

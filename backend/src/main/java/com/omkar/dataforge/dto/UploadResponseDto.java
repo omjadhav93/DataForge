@@ -18,5 +18,7 @@ public class UploadResponseDto {
 
     private Long rowCount;
 
+    private String originalFileName;
+
     private List<String> columns;
 }
