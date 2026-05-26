@@ -1,4 +1,4 @@
-package com.example.DataForge.demo;
+package com.omkar.dataforge;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

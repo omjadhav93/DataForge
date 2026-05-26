@@ -17,10 +17,8 @@ public class DatasetController {
 
     private final DatasetService datasetService;
 
-    @PostMapping("/upload")
-    public ResponseEntity<UploadResponseDto> uploadCsv(
-            @RequestParam("file") MultipartFile file
-    ) {
+    @PostMapping(value = "/upload")
+    public ResponseEntity<UploadResponseDto> uploadCsv( @RequestParam("file") MultipartFile file ) {
 
         UploadResponseDto response = datasetService.uploadDataset(file);
 
@@ -50,16 +48,7 @@ public class DatasetController {
             @RequestParam Map<String, String> allParams
     ) {
 
-        PaginatedResponseDto response =
-                datasetService.getDatasetRows(
-                        tableName,
-                        page,
-                        size,
-                        search,
-                        sortBy,
-                        sortDir,
-                        allParams
-                );
+        PaginatedResponseDto response = datasetService.getDatasetRows( tableName, page, size, search, sortBy, sortDir, allParams );
 
         return ResponseEntity.ok(response);
     }

@@ -17,121 +17,56 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CsvService {
 
-    public List<String> extractHeaders(
-            MultipartFile file
-    ) {
-
+    public List<String> extractHeaders( MultipartFile file ) {
         try {
+            Reader reader = new InputStreamReader( file.getInputStream() );
+            CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build().parse(reader);
+            List<String> sanitizedHeaders = new ArrayList<>();
 
-            Reader reader =
-                    new InputStreamReader(
-                            file.getInputStream()
-                    );
-
-            CSVParser parser =
-                    CSVFormat.DEFAULT
-                            .builder()
-                            .setHeader()
-                            .setSkipHeaderRecord(true)
-                            .build()
-                            .parse(reader);
-
-            List<String> sanitizedHeaders =
-                    new ArrayList<>();
-
-            for (
-                    String header :
-                    parser.getHeaderMap().keySet()
-            ) {
-
-                sanitizedHeaders.add(
-                        SqlSanitizerUtil
-                                .sanitizeColumnName(header)
-                );
+            for ( String header : parser.getHeaderMap().keySet() ) {
+                sanitizedHeaders.add(SqlSanitizerUtil.sanitizeColumnName(header));
             }
 
             return sanitizedHeaders;
-
         } catch (Exception e) {
-
-            throw new RuntimeException(
-                    "Failed to parse CSV headers"
-            );
+            throw new RuntimeException("Failed to parse CSV headers");
         }
     }
 
-    public long processCsvAndInsert(
-            MultipartFile file,
-            List<String> columns,
-            String tableName,
-            TableService tableService
-    ) {
-
+    public long processCsvAndInsert( MultipartFile file, List<String> columns, String tableName, TableService tableService ) {
         try {
 
-            Reader reader =
-                    new InputStreamReader(
-                            file.getInputStream()
-                    );
-
-            CSVParser parser =
-                    CSVFormat.DEFAULT
-                            .builder()
-                            .setHeader()
-                            .setSkipHeaderRecord(true)
-                            .build()
-                            .parse(reader);
-
-            List<List<String>> batchRows =
-                    new ArrayList<>();
+            Reader reader = new InputStreamReader(file.getInputStream());
+            CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build().parse(reader);
+            List<List<String>> batchRows = new ArrayList<>();
 
             long totalRows = 0;
 
             for (CSVRecord record : parser) {
-
-                List<String> row =
-                        new ArrayList<>();
+                List<String> row = new ArrayList<>();
 
                 for (int i = 0; i < columns.size(); i++) {
-
-                    row.add(
-                            record.get(i)
-                    );
+                    row.add(record.get(i));
                 }
 
                 batchRows.add(row);
-
                 totalRows++;
 
                 if (batchRows.size() >= 1000) {
-
-                    tableService.batchInsertRows(
-                            tableName,
-                            columns,
-                            batchRows
-                    );
-
+                    tableService.batchInsertRows( tableName, columns, batchRows );
                     batchRows.clear();
                 }
             }
 
             if (!batchRows.isEmpty()) {
-
-                tableService.batchInsertRows(
-                        tableName,
-                        columns,
-                        batchRows
-                );
+                tableService.batchInsertRows( tableName, columns, batchRows );
             }
 
             return totalRows;
 
         } catch (Exception e) {
 
-            throw new RuntimeException(
-                    "Failed to process CSV",
-                    e
-            );
+            throw new RuntimeException("Failed to process CSV", e );
         }
     }
 }

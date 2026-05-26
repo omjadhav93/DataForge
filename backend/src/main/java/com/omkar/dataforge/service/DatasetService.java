@@ -14,86 +14,41 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DatasetService {
 
-    private final CsvService csvService;
+        private final CsvService csvService;
 
-    private final TableService tableService;
+        private final TableService tableService;
 
-    public UploadResponseDto uploadDataset(
-            MultipartFile file
-    ) {
+        public UploadResponseDto uploadDataset(MultipartFile file) {
 
-        validateFile(file);
+                validateFile(file);
+                UUID datasetId = UUID.randomUUID();
+                String tableName = "dataset_" + datasetId.toString().replace("-", "_");
 
-        UUID datasetId = UUID.randomUUID();
+                List<String> columns = csvService.extractHeaders(file);
 
-        String tableName = "dataset_" +
-                datasetId.toString()
-                        .replace("-", "_");
+                tableService.createDynamicTable(tableName, columns);
 
-        List<String> columns =
-                csvService.extractHeaders(file);
+                long rowCount = csvService.processCsvAndInsert(file, columns, tableName, tableService);
 
-        tableService.createDynamicTable(
-                tableName,
-                columns
-        );
-
-        long rowCount = csvService.processCsvAndInsert(
-                file,
-                columns,
-                tableName,
-                tableService
-        );
-
-        return UploadResponseDto.builder()
-                .datasetId(datasetId)
-                .tableName(tableName)
-                .rowCount(rowCount)
-                .columns(columns)
-                .build();
-    }
-
-    public PaginatedResponseDto getDatasetRows(
-            String tableName,
-            int page,
-            int size,
-            String search,
-            String sortBy,
-            String sortDir,
-            Map<String, String> allParams
-    ) {
-
-        return tableService.fetchRows(
-                tableName,
-                page,
-                size,
-                search,
-                sortBy,
-                sortDir,
-                allParams
-        );
-    }
-
-    private void validateFile(
-            MultipartFile file
-    ) {
-
-        if (file.isEmpty()) {
-            throw new RuntimeException(
-                    "File is empty"
-            );
+                return UploadResponseDto.builder().datasetId(datasetId).tableName(tableName).rowCount(rowCount)
+                                .columns(columns).build();
         }
 
-        String fileName =
-                file.getOriginalFilename();
-
-        if (
-                fileName == null ||
-                !fileName.endsWith(".csv")
-        ) {
-            throw new RuntimeException(
-                    "Only CSV files are allowed"
-            );
+        public PaginatedResponseDto getDatasetRows( String tableName, int page, int size, String search, String sortBy, String sortDir, Map<String, String> allParams) {
+                
+                return tableService.fetchRows(tableName,page,size,search,sortBy,sortDir,allParams);
         }
-    }
+
+        private void validateFile(MultipartFile file) {
+
+                if (file.isEmpty()) {
+                        throw new RuntimeException("File is empty");
+                }
+
+                String fileName = file.getOriginalFilename();
+
+                if (fileName == null || !fileName.endsWith(".csv")) {
+                        throw new RuntimeException("Only CSV files are allowed");
+                }
+        }
 }
