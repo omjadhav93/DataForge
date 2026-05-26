@@ -8,6 +8,7 @@ import PerformanceSection from '../components/PerformanceSection';
 import HowItWorksSection from '../components/HowItWorksSection';
 import Footer from '../components/Footer';
 import UploadModal from '../components/UploadWindow';
+import { apiUrl } from '../lib/api';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function LandingPage() {
   // Check if the dataset still exists on the server
   useEffect(() => {
     if (uploadInfo?.tableName) {
-      fetch(`/api/datasets/${uploadInfo.tableName}/metadata`)
+      fetch(apiUrl(`/api/datasets/${uploadInfo.tableName}/metadata`))
         .then((res) => {
           if (!res.ok) throw new Error('Not found');
           return res.json();
@@ -95,3 +96,4 @@ export default function LandingPage() {
     </div>
   );
 }
+

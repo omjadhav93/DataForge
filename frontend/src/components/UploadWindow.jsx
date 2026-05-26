@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useDatasetStore from '../store/useDatasetStore';
+import { apiUrl } from '../lib/api';
 
 const UploadModal = ({ onClose }) => {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ const UploadModal = ({ onClose }) => {
     formData.append('file', file);
 
     try {
-      const res = await fetch('/api/datasets/upload', {
+      const res = await fetch(apiUrl('/api/datasets/upload'), {
         method: 'POST',
         body: formData,
       });

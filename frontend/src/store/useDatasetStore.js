@@ -1,3 +1,4 @@
+import { apiUrl } from '../lib/api';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -161,7 +162,7 @@ const useDatasetStore = create(
       });
 
       const res = await fetch(
-        `/api/datasets/${uploadInfo.tableName}/rows?${params.toString()}`
+        apiUrl(`/api/datasets/${uploadInfo.tableName}/rows?${params.toString()}`)
       );
 
       if (!res.ok) throw new Error(`Server error ${res.status}`);
@@ -203,5 +204,6 @@ const useDatasetStore = create(
 ));
 
 export default useDatasetStore;
+
 
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useDatasetStore from '../store/useDatasetStore';
+import { apiUrl } from '../lib/api';
 
 
 
@@ -266,7 +267,7 @@ export default function DatasetView() {
       showAllColumns();
     }
 
-    fetch(`/api/datasets/${uploadInfo.tableName}/metadata`)
+    fetch(apiUrl(`/api/datasets/${uploadInfo.tableName}/metadata`))
       .then((res) => {
         if (!res.ok) throw new Error('Not found');
         return res.json();
@@ -554,3 +555,4 @@ export default function DatasetView() {
     </div>
   );
 }
+
